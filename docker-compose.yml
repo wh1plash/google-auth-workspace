@@ -7,6 +7,7 @@
 # Services:
 #   frontend  http://localhost:5173
 #   backend   http://localhost:8090  (Swagger: /swagger/)
+#   notes     http://localhost:8091
 #   db        localhost:5432
 #
 # Google Cloud Console redirect URIs must include:
@@ -44,10 +45,13 @@ services:
         condition: service_healthy
     ports:
       - "8090:8080"
+    expose:
+      - "50051"
     env_file:
       - ./google-auth-standalone/.env
     environment:
       HTTP_ADDR: ":8080"
+      GRPC_ADDR: ":50051"
       DATABASE_URL: postgres://postgres:nbusr123@db:5432/postgres?sslmode=disable
       DB_SCHEMA: AUTH
       # Browser-facing URLs stay on localhost (host ports).
@@ -63,15 +67,43 @@ services:
       retries: 6
       start_period: 15s
 
+  notes:
+    build:
+      context: notes-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    ports:
+      - "8091:8080"
+    environment:
+      HTTP_ADDR: ":8080"
+      DATABASE_URL: postgres://postgres:nbusr123@db:5432/postgres?sslmode=disable
+      DB_SCHEMA: NOTE
+      AUTH_GRPC_ADDR: backend:50051
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
   frontend:
     build:
       context: google-auth-frontend
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8090}
+        VITE_NOTES_API_BASE_URL: ${VITE_NOTES_API_BASE_URL:-http://localhost:8091}
     restart: unless-stopped
     depends_on:
       backend:
+        condition: service_healthy
+      notes:
         condition: service_healthy
     ports:
       - "5173:80"

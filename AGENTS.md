@@ -78,7 +78,7 @@ Ports: frontend `:5173`, auth `:8090`, notes `:8091`, db `:5432`
 
 Auth exposes internal gRPC on `:50051` (Docker network only) for notes-service token validation.
 
-Backend builds with `-mod=vendor` (no `go mod download` in Docker). After dependency changes: `go mod tidy && go mod vendor` in `google-auth-standalone/`.
+Backend builds with `-mod=vendor` (no `go mod download` in Docker). After dependency changes: `make vendor` in `google-auth-standalone/` (runs `go mod vendor` and strips `appveyor.yml` files that trip GitHub push protection).
 
 ## Development commands
 
@@ -114,6 +114,6 @@ GitHub user: `wh1plash`. SSH host alias `github.com-wh1plash` may be configured 
 
 ## Known pitfalls
 
-- `vendor/` may contain upstream CI files with secrets — remove `appveyor.yml` etc. before push if GitHub blocks.
+- `vendor/` may contain upstream `appveyor.yml` with Slack webhooks → GitHub push protection; run `make vendor` (includes sanitize) or `make vendor-sanitize` before push.
 - SMTP errors on forgot-password are logged but API returns 200 (anti-enumeration).
 - Frontend `VITE_*` vars require image rebuild, not just container restart.
