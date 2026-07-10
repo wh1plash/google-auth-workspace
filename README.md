@@ -32,6 +32,27 @@ This directory is the **workspace root** repo. Backend and frontend are **git su
 | `google-auth-standalone/` | `git@github.com:wh1plash/google-auth-standalone.git` |
 | `google-auth-frontend/` | `git@github.com:wh1plash/google-auth-frontend.git` |
 
+### SSH (two GitHub accounts on one machine)
+
+If `git@github.com` authenticates as a **different** user than `wh1plash`, configure `~/.ssh/config`:
+
+```sshconfig
+Host github.com-wh1plash
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_wh1plash
+  IdentitiesOnly yes
+```
+
+Then set submodule remotes (workspace clone only needs this once per machine):
+
+```bash
+git -C google-auth-standalone remote set-url origin git@github.com-wh1plash:wh1plash/google-auth-standalone.git
+git -C google-auth-frontend remote set-url origin git@github.com-wh1plash:wh1plash/google-auth-frontend.git
+```
+
+**Important:** push submodules **before** (or right after) bumping them in the workspace — GitHub links to submodule commits that must exist on the child repo.
+
 ### Clone (first time)
 
 ```bash
