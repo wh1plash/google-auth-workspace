@@ -1,0 +1,6 @@
+[submodule "google-auth-standalone"]
+	path = google-auth-standalone
+	url = git@github.com:wh1plash/google-auth-standalone.git
+[submodule "google-auth-frontend"]
+	path = google-auth-frontend
+	url = git@github.com:wh1plash/google-auth-frontend.git

@@ -1,0 +1,43 @@
+---
+description: Go backend conventions for google-auth-standalone
+globs: google-auth-standalone/**/*.go
+alwaysApply: false
+---
+
+# Backend Go Rules
+
+## Layers
+
+- `internal/domain` — pure types and repository interfaces; no imports from adapter/usecase.
+- `internal/usecase` — business logic; depends only on domain + infrastructure interfaces injected via struct fields.
+- `internal/adapter/http/controller` — parse JSON, call usecase, write response; Swagger godoc on handlers.
+- `internal/adapter/persistence/postgres` — SQL via pgx; implement `domain/repository` interfaces.
+
+## HTTP patterns
+
+- Routes registered in `internal/adapter/http/router.go` using Go 1.22+ `mux.HandleFunc("METHOD /path", ...)`.
+- JSON helpers: `httpx.WriteJSON`, `httpx.WriteError`.
+- Auth: `middleware.Auth.RequireAPI` reads `Authorization: Bearer <token>`.
+- Presenters map `entity.User` → `response.User` (never expose domain entities in JSON).
+
+## Errors
+
+- Usecase sentinel errors: `ErrInvalidCredentials`, `ErrInvalidResetToken`, `ErrUsernameTaken`, etc.
+- Controllers map errors to HTTP status in `switch` blocks (400/403/409).
+- Wrap internal errors with `fmt.Errorf("context: %w", err)`.
+
+## Swagger
+
+- Annotate handlers with `// @Summary`, `@Router`, `@Param`, `@Success`, `@Failure`.
+- Regenerate: `cd google-auth-standalone && make swagger`.
+
+## Migrations
+
+- SQL pairs in `db/migrations/*.up.sql` / `*.down.sql`.
+- Create via `scripts/create-migration.sh "name"`.
+- Applied on server start and via `make migrate`; tracked in `"AUTH".schema_migrations`.
+
+## Testing
+
+- Table-driven `*_test.go` in same package or `_test` package for usecases.
+- Run: `go test ./...` from `google-auth-standalone/`.

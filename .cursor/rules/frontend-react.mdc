@@ -1,0 +1,39 @@
+---
+description: React SPA conventions for google-auth-frontend
+globs: google-auth-frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Frontend Rules
+
+## Stack
+
+- React 19, TypeScript, Vite 8, Tailwind 4
+- TanStack Router (file routes in `src/routes/`)
+- TanStack Query for server state
+- UI primitives in `src/components/ui/`
+
+## API client
+
+- All backend calls through `src/lib/api.ts`.
+- Base URL: `import.meta.env.VITE_API_BASE_URL` (default `http://localhost:8090`).
+- Bearer token from `src/lib/auth-storage.ts` attached to protected requests.
+
+## Routes
+
+- Add file under `src/routes/` → run `npm run routes:generate` (or `npm run build`).
+- Use `beforeLoad` + `redirect` for auth guards (`hasValidSession()`).
+- Session-scoped query keys: include token or user id to avoid stale cache after user switch.
+
+## Forms / auth UX
+
+- Use `autoComplete="off"` and decoy fields where browser autofill caused wrong data (see `CredentialsPanel`).
+- Password flows: `/forgot-password`, `/reset-password?token=...` (username field for Google-only set-password).
+
+## Docker note
+
+`VITE_API_BASE_URL` is a **build arg** in root `docker-compose.yml`. Changing it requires `docker compose build frontend`.
+
+## Lint
+
+- `npm run lint` (oxlint)

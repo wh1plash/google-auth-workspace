@@ -1,0 +1,47 @@
+---
+description: Docker and compose conventions for the Auth stack
+globs: "{docker-compose.yml,**/Dockerfile,**/.dockerignore,**/nginx.conf}"
+alwaysApply: false
+---
+
+# Docker Rules
+
+## Layout
+
+- Root `docker-compose.yml` orchestrates db + backend + frontend.
+- Backend context: `google-auth-standalone/` (not repo root).
+- Frontend context: `google-auth-frontend/`.
+
+## Backend image
+
+- Multi-stage: `golang:1.25-bookworm` builder → `alpine:3.22` runtime.
+- Build: `go build -mod=vendor` — **vendor/** must be committed and up to date.
+- No `apk` in runtime; CA certs copied from builder.
+- Runs as `USER 10001:10001`.
+- Env from `google-auth-standalone/.env` via `env_file`; compose overrides `DATABASE_URL`, `FRONTEND_URL`, etc.
+
+## Frontend image
+
+- Node build → nginx serves static files.
+- `ARG VITE_API_BASE_URL` passed at build time.
+
+## Local URLs (default)
+
+- Frontend: http://localhost:5173
+- Backend: http://localhost:8090
+- Google redirect: http://localhost:5173/auth/callback
+
+## After dependency or Dockerfile changes
+
+```bash
+cd /home/volodymyr/Oleh/go/projects/Own/Auth
+docker compose up --build
+```
+
+## Vendor hygiene before git push
+
+Remove upstream CI files that trigger GitHub secret scanning:
+
+```bash
+find google-auth-standalone/vendor -name 'appveyor.yml' -delete
+```

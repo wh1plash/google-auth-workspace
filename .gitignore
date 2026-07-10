@@ -1,0 +1,21 @@
+# Secrets — never commit
+**/.env
+.env
+*.env.local
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# Frontend build output (submodules manage their own ignores; belt-and-suspenders)
+google-auth-frontend/node_modules/
+google-auth-frontend/dist/
+
+# Backend build output
+google-auth-standalone/bin/

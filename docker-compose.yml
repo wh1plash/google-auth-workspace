@@ -1,0 +1,80 @@
+# Google Auth stack: PostgreSQL + API + SPA
+#
+# Usage (from this directory):
+#   cp .env.example .env   # fill Google OAuth + optional SMTP
+#   docker compose up --build
+#
+# Services:
+#   frontend  http://localhost:5173
+#   backend   http://localhost:8090  (Swagger: /swagger/)
+#   db        localhost:5432
+#
+# Google Cloud Console redirect URIs must include:
+#   http://localhost:5173/auth/callback
+#   http://localhost:8090/postman/callback
+
+name: google-auth
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: nbusr123
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  backend:
+    build:
+      context: google-auth-standalone
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8090:8080"
+    env_file:
+      - ./google-auth-standalone/.env
+    environment:
+      HTTP_ADDR: ":8080"
+      DATABASE_URL: postgres://postgres:nbusr123@db:5432/postgres?sslmode=disable
+      DB_SCHEMA: AUTH
+      # Browser-facing URLs stay on localhost (host ports).
+      GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL:-http://localhost:5173/auth/callback}
+      GOOGLE_POSTMAN_REDIRECT_URL: ${GOOGLE_POSTMAN_REDIRECT_URL:-http://localhost:8090/postman/callback}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    healthcheck:
+      # busybox wget ships with alpine base — no extra apk package needed.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
+
+  frontend:
+    build:
+      context: google-auth-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8090}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:80"
+
+volumes:
+  pgdata:
