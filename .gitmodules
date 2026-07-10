@@ -4,3 +4,6 @@
 [submodule "google-auth-frontend"]
 	path = google-auth-frontend
 	url = git@github.com:wh1plash/google-auth-frontend.git
+[submodule "notes-service"]
+	path = notes-service
+	url = git@github.com:wh1plash/notes-service.git

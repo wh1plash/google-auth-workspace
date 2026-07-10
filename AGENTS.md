@@ -7,6 +7,8 @@
 | Component | Path | Git remote |
 |-----------|------|------------|
 | Backend API | `google-auth-standalone/` | `git@github.com:wh1plash/google-auth-standalone.git` |
+| Notes API | `notes-service/` | `git@github.com:wh1plash/notes-service.git` |
+| Shared proto | `api/` | — |
 | Frontend SPA | `google-auth-frontend/` | `git@github.com:wh1plash/google-auth-frontend.git` |
 | Docker stack | `docker-compose.yml` (root) | — |
 
@@ -72,7 +74,9 @@ cp google-auth-standalone/.env.example google-auth-standalone/.env  # fill secre
 docker compose up --build
 ```
 
-Ports: frontend `:5173`, backend `:8090`, db `:5432`
+Ports: frontend `:5173`, auth `:8090`, notes `:8091`, db `:5432`
+
+Auth exposes internal gRPC on `:50051` (Docker network only) for notes-service token validation.
 
 Backend builds with `-mod=vendor` (no `go mod download` in Docker). After dependency changes: `go mod tidy && go mod vendor` in `google-auth-standalone/`.
 
